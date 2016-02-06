@@ -57,6 +57,7 @@ public class EmbeddedIpcPingPong
         }
 
         final MediaDriver.Context ctx = new MediaDriver.Context()
+            .warnIfDirectoriesExist(false)
             .threadingMode(ThreadingMode.DEDICATED)
             .conductorIdleStrategy(new BackoffIdleStrategy(1, 1, 1, 1))
             .receiverIdleStrategy(new NoOpIdleStrategy())
