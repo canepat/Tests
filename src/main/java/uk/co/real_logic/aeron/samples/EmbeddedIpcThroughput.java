@@ -48,6 +48,7 @@ public class EmbeddedIpcThroughput
         SigInt.register(() -> running.set(false));
 
         final MediaDriver.Context ctx = new MediaDriver.Context()
+            .warnIfDirectoriesExist(false)
             .threadingMode(ThreadingMode.SHARED)
             .sharedIdleStrategy(new NoOpIdleStrategy());
 
