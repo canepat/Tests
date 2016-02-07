@@ -28,8 +28,8 @@ public final class WriteCombining
             System.out.println(i + " SplitLoop  duration (ns) = " + runCaseTwo());
         }
 
-        int sum = 1+2+3+4+5+6+7+8+9+10+11+12;
-        int result = ARRAY_A[1] + ARRAY_B[2] + ARRAY_C[3] + ARRAY_D[4] + ARRAY_E[5] + ARRAY_F[6] +
+        final int sum = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12;
+        final int result = ARRAY_A[1] + ARRAY_B[2] + ARRAY_C[3] + ARRAY_D[4] + ARRAY_E[5] + ARRAY_F[6] +
             ARRAY_G[7] + ARRAY_H[8] + ARRAY_I[9] + ARRAY_J[10] + ARRAY_K[11] + ARRAY_L[12];
 
         if (sum != result)
@@ -40,13 +40,13 @@ public final class WriteCombining
 
     public static long runCaseOne()
     {
-        long start = System.nanoTime();
+        final long start = System.nanoTime();
 
         int i = ITERATIONS;
         while (--i != 0)
         {
-            int slot = i & MASK;
-            byte b = (byte)i;
+            final int slot = i & MASK;
+            final byte b = (byte)i;
             ARRAY_A[slot] = b;
             ARRAY_B[slot] = b;
             ARRAY_C[slot] = b;
@@ -66,13 +66,13 @@ public final class WriteCombining
 
     public static long runCaseTwo()
     {
-        long start = System.nanoTime();
+        final long start = System.nanoTime();
 
         int i = ITERATIONS;
         while (--i != 0)
         {
-            int slot = i & MASK;
-            byte b = (byte)i;
+            final int slot = i & MASK;
+            final byte b = (byte)i;
             ARRAY_A[slot] = b;
             ARRAY_B[slot] = b;
             ARRAY_C[slot] = b;
@@ -84,8 +84,8 @@ public final class WriteCombining
         i = ITERATIONS;
         while (--i != 0)
         {
-            int slot = i & MASK;
-            byte b = (byte)i;
+            final int slot = i & MASK;
+            final byte b = (byte)i;
             ARRAY_G[slot] = b;
             ARRAY_H[slot] = b;
             ARRAY_I[slot] = b;
