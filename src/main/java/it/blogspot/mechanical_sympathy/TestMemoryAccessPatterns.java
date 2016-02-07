@@ -1,4 +1,4 @@
-package mechanical_sympathy;
+package it.blogspot.mechanical_sympathy;
 
 public class TestMemoryAccessPatterns
 {
@@ -15,41 +15,41 @@ public class TestMemoryAccessPatterns
 
     private static final int PRIME_INC = 514229;
 
-    private static final long[] memory = new long[ARRAY_SIZE];
+    private static final long[] MEMORY = new long[ARRAY_SIZE];
 
     static
     {
         for (int i = 0; i < ARRAY_SIZE; i++)
         {
-            memory[i] = 777;
+            MEMORY[i] = 777;
         }
     }
 
     public enum StrideType
     {
         LINEAR_WALK
+        {
+            public int next(final int pageOffset, final int wordOffset, final int pos)
             {
-                public int next(final int pageOffset, final int wordOffset, final int pos)
-                {
-                    return (pos + 1) & ARRAY_MASK;
-                }
-            },
+                return (pos + 1) & ARRAY_MASK;
+            }
+        },
 
         RANDOM_PAGE_WALK
+        {
+            public int next(final int pageOffset, final int wordOffset, final int pos)
             {
-                public int next(final int pageOffset, final int wordOffset, final int pos)
-                {
-                    return pageOffset + ((pos + PRIME_INC) & PAGE_MASK);
-                }
-            },
+                return pageOffset + ((pos + PRIME_INC) & PAGE_MASK);
+            }
+        },
 
         RANDOM_HEAP_WALK
+        {
+            public int next(final int pageOffset, final int wordOffset, final int pos)
             {
-                public int next(final int pageOffset, final int wordOffset, final int pos)
-                {
-                    return (pos + PRIME_INC) & ARRAY_MASK;
-                }
-            };
+                return (pos + PRIME_INC) & ARRAY_MASK;
+            }
+        };
 
         public abstract int next(int pageOffset, int wordOffset, int pos);
     }
@@ -87,7 +87,7 @@ public class TestMemoryAccessPatterns
                  wordOffset++)
             {
                 pos = strideType.next(pageOffset, wordOffset, pos);
-                result += memory[pos];
+                result += MEMORY[pos];
             }
         }
 

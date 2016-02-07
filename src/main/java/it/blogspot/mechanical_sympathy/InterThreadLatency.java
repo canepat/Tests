@@ -1,4 +1,4 @@
-package mechanical_sympathy;
+package it.blogspot.mechanical_sympathy;
 
 public final class InterThreadLatency implements Runnable
 {
