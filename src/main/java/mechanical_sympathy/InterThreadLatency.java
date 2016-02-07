@@ -1,4 +1,4 @@
-package latency;
+package mechanical_sympathy;
 
 public final class InterThreadLatency implements Runnable
 {
@@ -27,6 +27,7 @@ public final class InterThreadLatency implements Runnable
 
         final long duration = System.nanoTime() - start;
 
+        System.out.println("InterThreadLatency:");
         System.out.println("duration = " + duration);
         System.out.println("ns per op = " + duration / (ITERATIONS * 2));
         System.out.println("op/sec = " + (ITERATIONS * 2L * 1000L * 1000L * 1000L) / duration);
