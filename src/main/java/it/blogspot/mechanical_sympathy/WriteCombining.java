@@ -28,9 +28,14 @@ public final class WriteCombining
             System.out.println(i + " SplitLoop  duration (ns) = " + runCaseTwo());
         }
 
+        int sum = 1+2+3+4+5+6+7+8+9+10+11+12;
         int result = ARRAY_A[1] + ARRAY_B[2] + ARRAY_C[3] + ARRAY_D[4] + ARRAY_E[5] + ARRAY_F[6] +
             ARRAY_G[7] + ARRAY_H[8] + ARRAY_I[9] + ARRAY_J[10] + ARRAY_K[11] + ARRAY_L[12];
-        System.out.println("result = " + result);
+
+        if (sum != result)
+        {
+            throw new IllegalStateException();
+        }
     }
 
     public static long runCaseOne()
