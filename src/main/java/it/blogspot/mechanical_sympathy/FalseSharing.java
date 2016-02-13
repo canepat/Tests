@@ -4,8 +4,8 @@ import java.util.concurrent.TimeUnit;
 
 public final class FalseSharing
 {
-    public final static int NUM_THREADS = 4; // change
-    public final static long ITERATIONS = 500L * 1000L * 1000L;
+    public static final int NUM_THREADS = 4; // change
+    public static final long ITERATIONS = 500L * 1000L * 1000L;
 
     private static VolatileLong[] longs = new VolatileLong[NUM_THREADS];
     private static PaddedVolatileLong[] paddedLongs = new PaddedVolatileLong[NUM_THREADS];
@@ -40,7 +40,7 @@ public final class FalseSharing
 
     private static void runVolatileLongTest() throws InterruptedException
     {
-        Thread[] threads = new Thread[NUM_THREADS];
+        final Thread[] threads = new Thread[NUM_THREADS];
 
         for (int i = 0; i < threads.length; i++)
         {
@@ -61,7 +61,7 @@ public final class FalseSharing
 
     private static void runPaddedVolatileLongTest() throws InterruptedException
     {
-        Thread[] threads = new Thread[NUM_THREADS];
+        final Thread[] threads = new Thread[NUM_THREADS];
 
         for (int i = 0; i < threads.length; i++)
         {
@@ -79,7 +79,7 @@ public final class FalseSharing
         }
     }
 
-    public final static class VolatileLongTest implements Runnable
+    public static final class VolatileLongTest implements Runnable
     {
         private final int arrayIndex;
 
@@ -98,7 +98,7 @@ public final class FalseSharing
         }
     }
 
-    public final static class PaddedVolatileLongTest implements Runnable
+    public static final class PaddedVolatileLongTest implements Runnable
     {
         private final int arrayIndex;
 
@@ -117,7 +117,7 @@ public final class FalseSharing
         }
     }
 
-    public final static class VolatileLong
+    public static final class VolatileLong
     {
         public volatile long value = 0L;
     }
