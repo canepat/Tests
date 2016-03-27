@@ -145,12 +145,17 @@ public class AeronEmbeddedPingPong
                     final MessageHandler outputMsgHandler = new OutputMessageHandler(pongPublisher);
                     new OutputMessageProcessor(outputRingBuffer, outputMsgHandler).start();
 
+                    final ByteBuffer serviceBuffer = ByteBuffer.allocateDirect((16 * 1024) + TRAILER_LENGTH);
+                    final RingBuffer serviceRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(serviceBuffer));
+
                     final MessageHandler serviceHandler = new ServiceHandler(outputRingBuffer);
+                    new InputMessageProcessor(serviceRingBuffer, serviceHandler).start();
 
                     final ByteBuffer inputBuffer = ByteBuffer.allocateDirect((16 * 1024) + TRAILER_LENGTH);
                     final RingBuffer inputRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(inputBuffer));
 
-                    new InputMessageProcessor(inputRingBuffer, serviceHandler).start();
+                    final MessageHandler journalHandler = new JournalHandler(serviceRingBuffer);
+                    new JournalProcessor(inputRingBuffer, journalHandler).start();
 
                     final FragmentHandler inputHandler = new FragmentMessageHandler(inputRingBuffer);
                     final FragmentAssembler dataHandler = new FragmentAssembler(inputHandler);
@@ -282,12 +287,12 @@ public class AeronEmbeddedPingPong
 
     private static class InputMessageProcessor extends Thread
     {
-        private final RingBuffer inputRingBuffer;
+        private final RingBuffer serviceRingBuffer;
         private final MessageHandler serviceHandler;
 
-        InputMessageProcessor(final RingBuffer inputRingBuffer, final MessageHandler serviceHandler)
+        InputMessageProcessor(final RingBuffer serviceRingBuffer, final MessageHandler serviceHandler)
         {
-            this.inputRingBuffer = inputRingBuffer;
+            this.serviceRingBuffer = serviceRingBuffer;
             this.serviceHandler = serviceHandler;
         }
 
@@ -296,7 +301,53 @@ public class AeronEmbeddedPingPong
         {
             while (RUNNING.get())
             {
-                final int readCount = inputRingBuffer.read(serviceHandler);
+                final int readCount = serviceRingBuffer.read(serviceHandler);
+                if (0 == readCount)
+                {
+                    READ_IDLE_STRATEGY.idle(0);
+                }
+            }
+        }
+    }
+
+    private static class JournalHandler implements MessageHandler
+    {
+        private final RingBuffer serviceRingBuffer;
+
+        JournalHandler(final RingBuffer serviceRingBuffer)
+        {
+            this.serviceRingBuffer = serviceRingBuffer;
+        }
+
+        @Override
+        public void onMessage(int msgTypeId, MutableDirectBuffer buffer, int index, int length)
+        {
+            // TODO: journal message
+
+            while (!serviceRingBuffer.write(MSG_TYPE_ID, buffer, index, length))
+            {
+                WRITE_IDLE_STRATEGY.idle(0);
+            }
+        }
+    }
+
+    private static class JournalProcessor extends Thread
+    {
+        private final RingBuffer inputRingBuffer;
+        private final MessageHandler journalHandler;
+
+        JournalProcessor(final RingBuffer inputRingBuffer, final MessageHandler journalHandler)
+        {
+            this.inputRingBuffer = inputRingBuffer;
+            this.journalHandler = journalHandler;
+        }
+
+        @Override
+        public void run()
+        {
+            while (RUNNING.get())
+            {
+                final int readCount = inputRingBuffer.read(journalHandler);
                 if (0 == readCount)
                 {
                     READ_IDLE_STRATEGY.idle(0);
