@@ -11,7 +11,7 @@ import uk.co.real_logic.agrona.DirectBuffer;
 import uk.co.real_logic.agrona.LangUtil;
 import uk.co.real_logic.agrona.MutableDirectBuffer;
 import uk.co.real_logic.agrona.concurrent.*;
-import uk.co.real_logic.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
+import uk.co.real_logic.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import uk.co.real_logic.agrona.concurrent.ringbuffer.RingBuffer;
 import uk.co.real_logic.agrona.console.ContinueBarrier;
 
@@ -140,7 +140,7 @@ public class AeronEmbeddedPingPong
                      final Subscription pingSubscriber = aeron.addSubscription(PING_CHANNEL, PING_STREAM_ID))
                 {
                     final ByteBuffer outputBuffer = ByteBuffer.allocateDirect((16 * 1024) + TRAILER_LENGTH);
-                    final RingBuffer outputRingBuffer = new ManyToOneRingBuffer(new UnsafeBuffer(outputBuffer));
+                    final RingBuffer outputRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(outputBuffer));
 
                     final MessageHandler outputMsgHandler = new OutputMessageHandler(pongPublisher);
                     new OutputMessageProcessor(outputRingBuffer, outputMsgHandler).start();
@@ -148,7 +148,7 @@ public class AeronEmbeddedPingPong
                     final MessageHandler serviceHandler = new ServiceHandler(outputRingBuffer);
 
                     final ByteBuffer inputBuffer = ByteBuffer.allocateDirect((16 * 1024) + TRAILER_LENGTH);
-                    final RingBuffer inputRingBuffer = new ManyToOneRingBuffer(new UnsafeBuffer(inputBuffer));
+                    final RingBuffer inputRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(inputBuffer));
 
                     new InputMessageProcessor(inputRingBuffer, serviceHandler).start();
 
