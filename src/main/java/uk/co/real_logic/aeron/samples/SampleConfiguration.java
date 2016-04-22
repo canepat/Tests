@@ -36,6 +36,7 @@ public class SampleConfiguration
     public static final String FRAME_COUNT_LIMIT_PROP = "aeron.sample.frameCountLimit";
     public static final String MESSAGE_LENGTH_PROP = "aeron.sample.messageLength";
     public static final String NUMBER_OF_MESSAGES_PROP = "aeron.sample.messages";
+    public static final String NUMBER_OF_ITERATIONS_PROP = "aeron.sample.iterations";
     public static final String LINGER_TIMEOUT_MS_PROP = "aeron.sample.lingerTimeout";
     public static final String EMBEDDED_MEDIA_DRIVER_PROP = "aeron.sample.embeddedMediaDriver";
 
@@ -48,6 +49,7 @@ public class SampleConfiguration
     public static final int FRAGMENT_COUNT_LIMIT;
     public static final int MESSAGE_LENGTH;
     public static final int NUMBER_OF_MESSAGES;
+    public static final int NUMBER_OF_ITERATIONS;
     public static final int WARMUP_NUMBER_OF_MESSAGES;
     public static final int WARMUP_NUMBER_OF_ITERATIONS;
     public static final long LINGER_TIMEOUT_MS;
@@ -66,6 +68,7 @@ public class SampleConfiguration
         MESSAGE_LENGTH = Integer.getInteger(MESSAGE_LENGTH_PROP, 256);
         RANDOM_MESSAGE_LENGTH = Boolean.getBoolean(RANDOM_MESSAGE_LENGTH_PROP);
         NUMBER_OF_MESSAGES = Integer.getInteger(NUMBER_OF_MESSAGES_PROP, 1_000_000/*1_000_000*/);
+        NUMBER_OF_ITERATIONS = Integer.getInteger(NUMBER_OF_ITERATIONS_PROP, 100);
         WARMUP_NUMBER_OF_MESSAGES = Integer.getInteger(WARMUP_NUMBER_OF_MESSAGES_PROP, 10_000/*10_000*/);
         WARMUP_NUMBER_OF_ITERATIONS = Integer.getInteger(WARMUP_NUMBER_OF_ITERATIONS_PROP, 1/*5*/);
         LINGER_TIMEOUT_MS = Long.getLong(LINGER_TIMEOUT_MS_PROP, TimeUnit.SECONDS.toMillis(5));

@@ -4,6 +4,7 @@ import org.HdrHistogram.Histogram;
 import uk.co.real_logic.aeron.*;
 import uk.co.real_logic.aeron.driver.MediaDriver;
 import uk.co.real_logic.aeron.driver.ThreadingMode;
+import uk.co.real_logic.aeron.logbuffer.BufferClaim;
 import uk.co.real_logic.aeron.logbuffer.FragmentHandler;
 import uk.co.real_logic.aeron.logbuffer.Header;
 import uk.co.real_logic.aeron.samples.SampleConfiguration;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static uk.co.real_logic.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
-public class AeronEmbeddedPingPong
+public class AeronEmbeddedClaimPingPong
 {
     private static final boolean useIPC = Boolean.parseBoolean(System.getProperty("useIPC", "true"));
     private static final int PING_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID : SampleConfiguration.PING_STREAM_ID;
@@ -30,6 +31,7 @@ public class AeronEmbeddedPingPong
     private static final String PING_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PING_CHANNEL;
     private static final String PONG_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PONG_CHANNEL;
     private static final int NUMBER_OF_MESSAGES = SampleConfiguration.NUMBER_OF_MESSAGES;
+    private static final int NUMBER_OF_ITERATIONS = SampleConfiguration.NUMBER_OF_ITERATIONS;
     private static final int WARMUP_NUMBER_OF_MESSAGES = SampleConfiguration.WARMUP_NUMBER_OF_MESSAGES;
     private static final int WARMUP_NUMBER_OF_ITERATIONS = SampleConfiguration.WARMUP_NUMBER_OF_ITERATIONS;
 
@@ -77,14 +79,14 @@ public class AeronEmbeddedPingPong
     private static void runPing(final String embeddedDirName) throws Exception
     {
         final Aeron.Context ctx = new Aeron.Context()
-            .availableImageHandler(AeronEmbeddedPingPong::availablePongImageHandler);
+            .availableImageHandler(AeronEmbeddedClaimPingPong::availablePongImageHandler);
         ctx.aeronDirectoryName(embeddedDirName);
 
         System.out.println("Publishing Ping at " + PING_CHANNEL + " on stream Id " + PING_STREAM_ID);
         System.out.println("Subscribing Pong at " + PONG_CHANNEL + " on stream Id " + PONG_STREAM_ID);
         System.out.println("Message size of " + MESSAGE_LENGTH + " bytes");
 
-        final FragmentAssembler dataHandler = new FragmentAssembler(AeronEmbeddedPingPong::pongHandler);
+        final FragmentAssembler dataHandler = new FragmentAssembler(AeronEmbeddedClaimPingPong::pongHandler);
 
         try (final Aeron aeron = Aeron.connect(ctx);
              final Publication pingPublisher = aeron.addPublication(PING_CHANNEL, PING_STREAM_ID);
@@ -104,21 +106,31 @@ public class AeronEmbeddedPingPong
 
             final ContinueBarrier barrier = new ContinueBarrier("Execute again?");
 
+            int iteration = 0;
             do
             {
+                iteration++;
+
                 HISTOGRAM.reset();
                 System.out.println("Pinging " + NUMBER_OF_MESSAGES + " messages");
 
                 final long elapsedTime = sendPingAndReceivePong(dataHandler, pingPublisher, pongSubscriber, NUMBER_OF_MESSAGES);
 
                 System.out.println(
-                    String.format("%d ops, %d ns, %d ms, rate %.02g ops/s", NUMBER_OF_MESSAGES, elapsedTime, TimeUnit.NANOSECONDS.toMillis(elapsedTime),
+                    String.format("Iteration %d: %d ops, %d ns, %d ms, rate %.02g ops/s",
+                        iteration,
+                        NUMBER_OF_MESSAGES,
+                        elapsedTime,
+                        TimeUnit.NANOSECONDS.toMillis(elapsedTime),
                         ((double)NUMBER_OF_MESSAGES/(double)elapsedTime) * 1_000_000_000));
 
-                System.out.println("Histogram of RTT latencies in microseconds");
-                HISTOGRAM.outputPercentileDistribution(System.out, 1000.0);
+                if (NUMBER_OF_ITERATIONS <= 0)
+                {
+                    System.out.println("Histogram of RTT latencies in microseconds");
+                    HISTOGRAM.outputPercentileDistribution(System.out, 1000.0);
+                }
             }
-            while (barrier.await());
+            while ((NUMBER_OF_ITERATIONS > 0 && iteration < NUMBER_OF_ITERATIONS) || barrier.await());
         }
     }
 
@@ -183,17 +195,19 @@ public class AeronEmbeddedPingPong
         final int numMessages)
     {
         final IdleStrategy idleStrategy = new BusySpinIdleStrategy();
-        final UnsafeBuffer messageBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(MESSAGE_LENGTH));
+        final BufferClaim bufferClaim = new BufferClaim();
 
         final long start = System.nanoTime();
 
         for (int i = 0; i < numMessages; i++)
         {
-            do
+            while (pingPublisher.tryClaim(MESSAGE_LENGTH, bufferClaim) <= 0L)
             {
-                messageBuffer.putLong(0, System.nanoTime());
+                idleStrategy.idle(0);
             }
-            while (pingPublisher.offer(messageBuffer, 0, 8) < 0L);
+            final int offset = bufferClaim.offset();
+            bufferClaim.buffer().putLong(offset, System.nanoTime());
+            bufferClaim.commit();
 
             while (pongSubscriber.poll(fragmentHandler, FRAGMENT_COUNT_LIMIT) <= 0)
             {
@@ -225,6 +239,7 @@ public class AeronEmbeddedPingPong
     private static class OutputMessageHandler implements MessageHandler
     {
         private final Publication pongPublisher;
+        private final BufferClaim bufferClaim = new BufferClaim();
 
         OutputMessageHandler(final Publication pongPublisher)
         {
@@ -234,10 +249,13 @@ public class AeronEmbeddedPingPong
         @Override
         public void onMessage(int msgTypeId, MutableDirectBuffer buffer, int index, int length)
         {
-            while (pongPublisher.offer(buffer, index, length) < 0L)
+            while (pongPublisher.tryClaim(length, bufferClaim) <= 0L)
             {
                 OFFER_IDLE_STRATEGY.idle(0);
             }
+            final int offset = bufferClaim.offset();
+            bufferClaim.buffer().putBytes(offset, buffer, index, length);
+            bufferClaim.commit();
         }
     }
 
