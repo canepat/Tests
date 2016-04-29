@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Real Logic Ltd.
+ * Copyright 2015 - 2016 Real Logic Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,35 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.co.real_logic.aeron.samples;
+package io.aeron.samples;
 
-import uk.co.real_logic.aeron.*;
-import uk.co.real_logic.aeron.driver.MediaDriver;
-import uk.co.real_logic.aeron.driver.ThreadingMode;
-import uk.co.real_logic.aeron.logbuffer.FragmentHandler;
-import uk.co.real_logic.aeron.logbuffer.Header;
-import uk.co.real_logic.agrona.DirectBuffer;
-import uk.co.real_logic.agrona.concurrent.*;
+import io.aeron.*;
+import io.aeron.driver.MediaDriver;
+import io.aeron.driver.ThreadingMode;
+import io.aeron.logbuffer.BufferClaim;
+import io.aeron.logbuffer.FragmentHandler;
+import io.aeron.logbuffer.Header;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.NoOpIdleStrategy;
+import org.agrona.concurrent.SigInt;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
-import static uk.co.real_logic.agrona.UnsafeAccess.UNSAFE;
+import static org.agrona.UnsafeAccess.UNSAFE;
 
-public class EmbeddedIpcThroughput
+public class EmbeddedBufferClaimIpcThroughput
 {
-    public static final int BURST_SIZE = 1_000_000;
-    public static final int MESSAGE_LENGTH = SampleConfiguration.MESSAGE_LENGTH;
-    public static final int MESSAGE_COUNT_LIMIT = SampleConfiguration.FRAGMENT_COUNT_LIMIT;
-    public static final String CHANNEL = CommonContext.IPC_CHANNEL;
-    public static final int STREAM_ID = SampleConfiguration.STREAM_ID;
+    private static final int BURST_LENGTH = 1_000_000;
+    private static final int MESSAGE_LENGTH = SampleConfiguration.MESSAGE_LENGTH;
+    private static final int MESSAGE_COUNT_LIMIT = SampleConfiguration.FRAGMENT_COUNT_LIMIT;
+    private static final String CHANNEL = CommonContext.IPC_CHANNEL;
+    private static final int STREAM_ID = SampleConfiguration.STREAM_ID;
 
     public static void main(final String[] args) throws Exception
     {
-        if (1 == args.length)
+        for (String arg : args)
         {
-            MediaDriver.loadPropertiesFile(args[0]);
+            MediaDriver.loadPropertiesFile(arg);
         }
 
         final AtomicBoolean running = new AtomicBoolean(true);
@@ -49,11 +50,12 @@ public class EmbeddedIpcThroughput
 
         final MediaDriver.Context ctx = new MediaDriver.Context()
             .warnIfDirectoriesExist(false)
+            .dirsDeleteOnStart(true)
             .threadingMode(ThreadingMode.SHARED)
             .sharedIdleStrategy(new NoOpIdleStrategy());
 
         try (final MediaDriver ignore = MediaDriver.launch(ctx);
-             final Aeron aeron = Aeron.connect(new Aeron.Context());
+             final Aeron aeron = Aeron.connect();
              final Publication publication = aeron.addPublication(CHANNEL, STREAM_ID);
              final Subscription subscription = aeron.addSubscription(CHANNEL, STREAM_ID))
         {
@@ -75,12 +77,12 @@ public class EmbeddedIpcThroughput
         }
     }
 
-    public static final class RateReporter implements Runnable
+    private static final class RateReporter implements Runnable
     {
         private final AtomicBoolean running;
         private final Subscriber subscriber;
 
-        public RateReporter(final AtomicBoolean running, final Subscriber subscriber)
+        RateReporter(final AtomicBoolean running, final Subscriber subscriber)
         {
             this.running = running;
             this.subscriber = subscriber;
@@ -111,12 +113,12 @@ public class EmbeddedIpcThroughput
         }
     }
 
-    public static final class Publisher implements Runnable
+    private static final class Publisher implements Runnable
     {
         private final AtomicBoolean running;
         private final Publication publication;
 
-        public Publisher(final AtomicBoolean running, final Publication publication)
+        Publisher(final AtomicBoolean running, final Publication publication)
         {
             this.running = running;
             this.publication = publication;
@@ -125,16 +127,16 @@ public class EmbeddedIpcThroughput
         public void run()
         {
             final Publication publication = this.publication;
-            final UnsafeBuffer buffer = new UnsafeBuffer(ByteBuffer.allocateDirect(publication.maxMessageLength()));
+            final BufferClaim bufferClaim = new BufferClaim();
             long backPressureCount = 0;
             long totalMessageCount = 0;
 
             outputResults:
             while (running.get())
             {
-                for (int i = 0; i < BURST_SIZE; i++)
+                for (int i = 0; i < BURST_LENGTH; i++)
                 {
-                    while (publication.offer(buffer, 0, MESSAGE_LENGTH) <= 0)
+                    while (publication.tryClaim(MESSAGE_LENGTH, bufferClaim) <= 0)
                     {
                         ++backPressureCount;
                         if (!running.get())
@@ -142,6 +144,12 @@ public class EmbeddedIpcThroughput
                             break outputResults;
                         }
                     }
+
+                    final int offset = bufferClaim.offset();
+                    bufferClaim.buffer().putInt(offset, i); // Example field write
+                    // Real app would write whatever fields are required via a flyweight like SBE
+
+                    bufferClaim.commit();
 
                     ++totalMessageCount;
                 }
@@ -152,7 +160,7 @@ public class EmbeddedIpcThroughput
         }
     }
 
-    public static final class Subscriber implements Runnable, FragmentHandler
+    private static final class Subscriber implements Runnable, FragmentHandler
     {
         private static final long TOTAL_BYTES_OFFSET;
         static
@@ -172,20 +180,20 @@ public class EmbeddedIpcThroughput
 
         private volatile long totalBytes = 0;
 
-        public Subscriber(final AtomicBoolean running, final Subscription subscription)
+        Subscriber(final AtomicBoolean running, final Subscription subscription)
         {
             this.running = running;
             this.subscription = subscription;
         }
 
-        public long totalBytes()
+        long totalBytes()
         {
             return totalBytes;
         }
 
         public void run()
         {
-            while (subscription.images().size() == 0)
+            while (subscription.imageCount() == 0)
             {
                 // wait for an image to be ready
                 Thread.yield();

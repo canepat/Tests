@@ -1,4 +1,4 @@
-package it.blogspot.mechanical_sympathy;
+package blogspot.mechanical_sympathy;
 
 public final class WriteCombining
 {

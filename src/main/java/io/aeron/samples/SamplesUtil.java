@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.co.real_logic.aeron.samples;
+package io.aeron.samples;
 
-import uk.co.real_logic.aeron.Image;
-import uk.co.real_logic.aeron.Subscription;
-import uk.co.real_logic.aeron.driver.RateReporter;
-import uk.co.real_logic.aeron.logbuffer.FragmentHandler;
-import uk.co.real_logic.aeron.protocol.HeaderFlyweight;
-import uk.co.real_logic.agrona.LangUtil;
-import uk.co.real_logic.agrona.concurrent.BusySpinIdleStrategy;
-import uk.co.real_logic.agrona.concurrent.IdleStrategy;
+import io.aeron.Image;
+import io.aeron.Subscription;
+import io.aeron.logbuffer.FragmentHandler;
+import io.aeron.protocol.HeaderFlyweight;
+import org.agrona.LangUtil;
+import org.agrona.concurrent.BusySpinIdleStrategy;
+import org.agrona.concurrent.IdleStrategy;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;

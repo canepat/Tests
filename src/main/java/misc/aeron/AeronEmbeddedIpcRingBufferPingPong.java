@@ -1,28 +1,28 @@
 package misc.aeron;
 
 import org.HdrHistogram.Histogram;
-import uk.co.real_logic.aeron.*;
-import uk.co.real_logic.aeron.driver.MediaDriver;
-import uk.co.real_logic.aeron.driver.ThreadingMode;
-import uk.co.real_logic.aeron.logbuffer.FragmentHandler;
-import uk.co.real_logic.aeron.logbuffer.Header;
-import uk.co.real_logic.aeron.samples.SampleConfiguration;
-import uk.co.real_logic.agrona.DirectBuffer;
-import uk.co.real_logic.agrona.LangUtil;
-import uk.co.real_logic.agrona.MutableDirectBuffer;
-import uk.co.real_logic.agrona.concurrent.*;
-import uk.co.real_logic.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
-import uk.co.real_logic.agrona.concurrent.ringbuffer.RingBuffer;
-import uk.co.real_logic.agrona.console.ContinueBarrier;
+import io.aeron.*;
+import io.aeron.driver.MediaDriver;
+import io.aeron.driver.ThreadingMode;
+import io.aeron.logbuffer.FragmentHandler;
+import io.aeron.logbuffer.Header;
+import io.aeron.samples.SampleConfiguration;
+import org.agrona.DirectBuffer;
+import org.agrona.LangUtil;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.*;
+import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
+import org.agrona.concurrent.ringbuffer.RingBuffer;
+import org.agrona.console.ContinueBarrier;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static uk.co.real_logic.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
+import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
-public class AeronEmbeddedIpcPingPong
+public class AeronEmbeddedIpcRingBufferPingPong
 {
     private static final boolean useIPC = Boolean.parseBoolean(System.getProperty("useIPC", "true"));
     private static final int PING_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID : SampleConfiguration.PING_STREAM_ID;
@@ -78,14 +78,14 @@ public class AeronEmbeddedIpcPingPong
     private static void runPing(final String embeddedDirName) throws Exception
     {
         final Aeron.Context ctx = new Aeron.Context()
-            .availableImageHandler(AeronEmbeddedIpcPingPong::availablePongImageHandler);
+            .availableImageHandler(AeronEmbeddedIpcRingBufferPingPong::availablePongImageHandler);
         ctx.aeronDirectoryName(embeddedDirName);
 
         System.out.println("Publishing Ping at " + PING_CHANNEL + " on stream Id " + PING_STREAM_ID);
         System.out.println("Subscribing Pong at " + PONG_CHANNEL + " on stream Id " + PONG_STREAM_ID);
         System.out.println("Message size of " + MESSAGE_LENGTH + " bytes");
 
-        final FragmentAssembler dataHandler = new FragmentAssembler(AeronEmbeddedIpcPingPong::pongHandler);
+        final FragmentAssembler dataHandler = new FragmentAssembler(AeronEmbeddedIpcRingBufferPingPong::pongHandler);
 
         try (final Aeron aeron = Aeron.connect(ctx);
              final Publication pingPublisher = aeron.addPublication(PING_CHANNEL, PING_STREAM_ID);

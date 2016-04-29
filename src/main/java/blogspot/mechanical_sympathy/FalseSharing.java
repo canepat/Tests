@@ -1,4 +1,4 @@
-package it.blogspot.mechanical_sympathy;
+package blogspot.mechanical_sympathy;
 
 import java.util.concurrent.TimeUnit;
 

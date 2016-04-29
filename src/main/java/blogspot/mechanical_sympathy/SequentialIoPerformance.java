@@ -1,4 +1,4 @@
-package it.blogspot.mechanical_sympathy;
+package blogspot.mechanical_sympathy;
 
 import java.io.*;
 import java.nio.ByteBuffer;
