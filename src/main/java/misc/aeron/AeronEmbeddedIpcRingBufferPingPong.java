@@ -24,11 +24,10 @@ import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENG
 
 public class AeronEmbeddedIpcRingBufferPingPong
 {
-    private static final boolean useIPC = Boolean.parseBoolean(System.getProperty("useIPC", "true"));
-    private static final int PING_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID : SampleConfiguration.PING_STREAM_ID;
-    private static final int PONG_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID+1 : SampleConfiguration.PONG_STREAM_ID;
-    private static final String PING_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PING_CHANNEL;
-    private static final String PONG_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PONG_CHANNEL;
+    private static final int PING_STREAM_ID = SampleConfiguration.STREAM_ID;
+    private static final int PONG_STREAM_ID = SampleConfiguration.STREAM_ID+1;
+    private static final String PING_CHANNEL = CommonContext.IPC_CHANNEL;
+    private static final String PONG_CHANNEL = CommonContext.IPC_CHANNEL;
     private static final int NUMBER_OF_MESSAGES = SampleConfiguration.NUMBER_OF_MESSAGES;
     private static final int NUMBER_OF_ITERATIONS = SampleConfiguration.NUMBER_OF_ITERATIONS;
     private static final int WARMUP_NUMBER_OF_MESSAGES = SampleConfiguration.WARMUP_NUMBER_OF_MESSAGES;
@@ -45,6 +44,7 @@ public class AeronEmbeddedIpcRingBufferPingPong
     private static final IdleStrategy OFFER_IDLE_STRATEGY = new BusySpinIdleStrategy();
     private static final IdleStrategy POLL_IDLE_STRATEGY = new BusySpinIdleStrategy();
     private static final AtomicBoolean RUNNING = new AtomicBoolean(true);
+    private static final UnsafeBuffer MESSAGE_BUFFER = new UnsafeBuffer(ByteBuffer.allocateDirect(MESSAGE_LENGTH));
 
     private static final int MSG_TYPE_ID = 7;
 
@@ -194,7 +194,6 @@ public class AeronEmbeddedIpcRingBufferPingPong
         final int numMessages)
     {
         final IdleStrategy idleStrategy = new BusySpinIdleStrategy();
-        final UnsafeBuffer messageBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(MESSAGE_LENGTH));
 
         final long start = System.nanoTime();
 
@@ -202,9 +201,9 @@ public class AeronEmbeddedIpcRingBufferPingPong
         {
             do
             {
-                messageBuffer.putLong(0, System.nanoTime());
+                MESSAGE_BUFFER.putLong(0, System.nanoTime());
             }
-            while (pingPublisher.offer(messageBuffer, 0, 8) < 0L);
+            while (pingPublisher.offer(MESSAGE_BUFFER, 0, MESSAGE_LENGTH) < 0L);
 
             while (pongSubscriber.poll(fragmentHandler, FRAGMENT_COUNT_LIMIT) <= 0)
             {

@@ -63,8 +63,6 @@ public class EmbeddedIpcPingPong
             .receiverIdleStrategy(new NoOpIdleStrategy())
             .senderIdleStrategy(new NoOpIdleStrategy());
 
-        //MediaDriver.loadPropertiesFile("../resources/aeron.properties");
-
         try (final MediaDriver ignored = MediaDriver.launch(ctx))
         {
             final Thread pongThread = startPong(ignored.aeronDirectoryName());

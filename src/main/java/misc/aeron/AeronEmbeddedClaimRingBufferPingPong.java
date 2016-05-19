@@ -25,11 +25,10 @@ import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENG
 
 public class AeronEmbeddedClaimRingBufferPingPong
 {
-    private static final boolean useIPC = Boolean.parseBoolean(System.getProperty("useIPC", "true"));
-    private static final int PING_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID : SampleConfiguration.PING_STREAM_ID;
-    private static final int PONG_STREAM_ID = useIPC ? SampleConfiguration.STREAM_ID+1 : SampleConfiguration.PONG_STREAM_ID;
-    private static final String PING_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PING_CHANNEL;
-    private static final String PONG_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PONG_CHANNEL;
+    private static final int PING_STREAM_ID = SampleConfiguration.STREAM_ID;
+    private static final int PONG_STREAM_ID = SampleConfiguration.STREAM_ID+1;
+    private static final String PING_CHANNEL = CommonContext.IPC_CHANNEL;
+    private static final String PONG_CHANNEL = CommonContext.IPC_CHANNEL;
     private static final int NUMBER_OF_MESSAGES = SampleConfiguration.NUMBER_OF_MESSAGES;
     private static final int NUMBER_OF_ITERATIONS = SampleConfiguration.NUMBER_OF_ITERATIONS;
     private static final int WARMUP_NUMBER_OF_MESSAGES = SampleConfiguration.WARMUP_NUMBER_OF_MESSAGES;
@@ -197,12 +196,15 @@ public class AeronEmbeddedClaimRingBufferPingPong
         final IdleStrategy idleStrategy = new BusySpinIdleStrategy();
         final BufferClaim bufferClaim = new BufferClaim();
 
+        long backPressureCount = 0;
+
         final long start = System.nanoTime();
 
         for (int i = 0; i < numMessages; i++)
         {
             while (pingPublisher.tryClaim(MESSAGE_LENGTH, bufferClaim) <= 0L)
             {
+                ++backPressureCount;
                 idleStrategy.idle(0);
             }
             final int offset = bufferClaim.offset();
@@ -216,6 +218,9 @@ public class AeronEmbeddedClaimRingBufferPingPong
         }
 
         final long end = System.nanoTime();
+
+        final double backPressureRatio = backPressureCount / (double)numMessages;
+        System.out.format("Ping back pressure ratio: %f\n", backPressureRatio);
 
         return (end - start);
     }
