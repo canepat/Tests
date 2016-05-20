@@ -33,6 +33,7 @@ public class AeronDisruptorEmbeddedPingPong
     private static final String PING_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PING_CHANNEL;
     private static final String PONG_CHANNEL = useIPC ? CommonContext.IPC_CHANNEL : SampleConfiguration.PONG_CHANNEL;
     private static final int NUMBER_OF_MESSAGES = SampleConfiguration.NUMBER_OF_MESSAGES;
+    private static final int NUMBER_OF_ITERATIONS = SampleConfiguration.NUMBER_OF_ITERATIONS;
     private static final int WARMUP_NUMBER_OF_MESSAGES = SampleConfiguration.WARMUP_NUMBER_OF_MESSAGES;
     private static final int WARMUP_NUMBER_OF_ITERATIONS = SampleConfiguration.WARMUP_NUMBER_OF_ITERATIONS;
     private static final int MESSAGE_LENGTH = SampleConfiguration.MESSAGE_LENGTH;
@@ -102,8 +103,11 @@ public class AeronDisruptorEmbeddedPingPong
 
             final ContinueBarrier barrier = new ContinueBarrier("Execute again?");
 
+            int iteration = 0;
             do
             {
+                iteration++;
+
                 HISTOGRAM.reset();
                 System.out.println("Pinging " + NUMBER_OF_MESSAGES + " messages");
 
@@ -113,10 +117,13 @@ public class AeronDisruptorEmbeddedPingPong
                     String.format("%d ops, %d ns, %d ms, rate %.02g ops/s", NUMBER_OF_MESSAGES, elapsedTime, TimeUnit.NANOSECONDS.toMillis(elapsedTime),
                         ((double)NUMBER_OF_MESSAGES/(double)elapsedTime) * 1_000_000_000));
 
-                System.out.println("Histogram of RTT latencies in microseconds");
-                HISTOGRAM.outputPercentileDistribution(System.out, 1000.0);
+                if (NUMBER_OF_ITERATIONS <= 0)
+                {
+                    System.out.println("Histogram of RTT latencies in microseconds");
+                    HISTOGRAM.outputPercentileDistribution(System.out, 1000.0);
+                }
             }
-            while (barrier.await());
+            while ((NUMBER_OF_ITERATIONS > 0 && iteration < NUMBER_OF_ITERATIONS) || barrier.await());
         }
     }
 
