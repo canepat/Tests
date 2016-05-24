@@ -135,7 +135,7 @@ public class AeronEmbeddedIpcRingBufferPingPong
 
     private static Thread createPong(final String embeddedDirName)
     {
-        return new Thread()
+        return new Thread("inputMessageProcessor")
         {
             @SuppressWarnings("unchecked")
             public void run()
@@ -160,7 +160,7 @@ public class AeronEmbeddedIpcRingBufferPingPong
                     final RingBuffer serviceRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(serviceBuffer));
 
                     final MessageHandler serviceHandler = new ServiceHandler(outputRingBuffer);
-                    new InputMessageProcessor(serviceRingBuffer, serviceHandler).start();
+                    new ServiceProcessor(serviceRingBuffer, serviceHandler).start();
 
                     final ByteBuffer inputBuffer = ByteBuffer.allocateDirect((16 * 1024) + TRAILER_LENGTH);
                     final RingBuffer inputRingBuffer = new OneToOneRingBuffer(new UnsafeBuffer(inputBuffer));
@@ -258,6 +258,8 @@ public class AeronEmbeddedIpcRingBufferPingPong
 
         OutputMessageProcessor(final RingBuffer outputRingBuffer, final MessageHandler outputMsgHandler)
         {
+            super("outputMessageProcessor");
+
             this.outputRingBuffer = outputRingBuffer;
             this.outputMsgHandler = outputMsgHandler;
         }
@@ -295,13 +297,15 @@ public class AeronEmbeddedIpcRingBufferPingPong
         }
     }
 
-    private static class InputMessageProcessor extends Thread
+    private static class ServiceProcessor extends Thread
     {
         private final RingBuffer serviceRingBuffer;
         private final MessageHandler serviceHandler;
 
-        InputMessageProcessor(final RingBuffer serviceRingBuffer, final MessageHandler serviceHandler)
+        ServiceProcessor(final RingBuffer serviceRingBuffer, final MessageHandler serviceHandler)
         {
+            super("serviceProcessor");
+
             this.serviceRingBuffer = serviceRingBuffer;
             this.serviceHandler = serviceHandler;
         }
@@ -348,6 +352,8 @@ public class AeronEmbeddedIpcRingBufferPingPong
 
         JournalProcessor(final RingBuffer inputRingBuffer, final MessageHandler journalHandler)
         {
+            super("journalProcessor");
+
             this.inputRingBuffer = inputRingBuffer;
             this.journalHandler = journalHandler;
         }
