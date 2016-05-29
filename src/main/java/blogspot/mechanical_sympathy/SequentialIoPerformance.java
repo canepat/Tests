@@ -13,7 +13,8 @@ import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 public final class SequentialIoPerformance
 {
     public static final int PAGE_SIZE = 1024 * 4;
-    public static final long FILE_SIZE = PAGE_SIZE * 2000L * 1000L;
+    public static final long FILE_SIZE = PAGE_SIZE * 2048L * 1024L; // 8GB
+    //public static final long FILE_SIZE = PAGE_SIZE * 100L * 1024L; // 400MB
     public static final String FILE_NAME = "test.dat";
     public static final byte[] BLANK_PAGE = new byte[PAGE_SIZE];
 
