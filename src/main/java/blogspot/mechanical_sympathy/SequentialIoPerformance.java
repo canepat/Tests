@@ -130,7 +130,6 @@ public final class SequentialIoPerformance
                 final byte[] buffer = new byte[PAGE_SIZE];
                 int pos = 0;
                 int checkSum = 0;
-                long positionInFile = 0;
 
                 for (long i = 0; i < FILE_SIZE; i++)
                 {
@@ -140,10 +139,8 @@ public final class SequentialIoPerformance
                     buffer[pos++] = b;
                     if (PAGE_SIZE == pos)
                     {
-                        file.seek(positionInFile); // NOT present in Martin Thompson original version
                         file.write(buffer, 0, PAGE_SIZE);
                         pos = 0;
-                        positionInFile += PAGE_SIZE;
                     }
                 }
 
