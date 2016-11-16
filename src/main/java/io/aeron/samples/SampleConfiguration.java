@@ -29,6 +29,7 @@ public class SampleConfiguration
     public static final String PONG_CHANNEL_PROP = "aeron.sample.pong.channel";
     public static final String PING_STREAM_ID_PROP = "aeron.sample.ping.streamId";
     public static final String PONG_STREAM_ID_PROP = "aeron.sample.pong.streamId";
+    public static final String NUMBER_OF_CONCURRENT_PINGS_PROP = "aeron.sample.ping.concurrent";
     public static final String WARMUP_NUMBER_OF_MESSAGES_PROP = "aeron.sample.warmup.messages";
     public static final String WARMUP_NUMBER_OF_ITERATIONS_PROP = "aeron.sample.warmup.iterations";
     public static final String RANDOM_MESSAGE_LENGTH_PROP = "aeron.sample.randomMessageLength";
@@ -52,6 +53,7 @@ public class SampleConfiguration
     public static final int NUMBER_OF_ITERATIONS;
     public static final int WARMUP_NUMBER_OF_MESSAGES;
     public static final int WARMUP_NUMBER_OF_ITERATIONS;
+    public static final int NUMBER_OF_CONCURRENT_PINGS;
     public static final long LINGER_TIMEOUT_MS;
     public static final boolean EMBEDDED_MEDIA_DRIVER;
     public static final boolean RANDOM_MESSAGE_LENGTH;
@@ -71,6 +73,7 @@ public class SampleConfiguration
         NUMBER_OF_ITERATIONS = Integer.getInteger(NUMBER_OF_ITERATIONS_PROP, 100);
         WARMUP_NUMBER_OF_MESSAGES = Integer.getInteger(WARMUP_NUMBER_OF_MESSAGES_PROP, 10_000/*10_000*/);
         WARMUP_NUMBER_OF_ITERATIONS = Integer.getInteger(WARMUP_NUMBER_OF_ITERATIONS_PROP, 1/*5*/);
+        NUMBER_OF_CONCURRENT_PINGS = Integer.getInteger(NUMBER_OF_CONCURRENT_PINGS_PROP, 2);
         LINGER_TIMEOUT_MS = Long.getLong(LINGER_TIMEOUT_MS_PROP, TimeUnit.SECONDS.toMillis(5));
         EMBEDDED_MEDIA_DRIVER = Boolean.getBoolean(EMBEDDED_MEDIA_DRIVER_PROP);
     }
